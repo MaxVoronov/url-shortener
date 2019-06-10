@@ -3,7 +3,6 @@ package urlShortener
 import "testing"
 
 const rawUrl = "https://google.com/"
-const hashedUrl = "f82438a"
 
 func TestUrlNormalizing(t *testing.T) {
 	if result := normalizeUrl(rawUrl); result != rawUrl {
@@ -19,8 +18,18 @@ func TestUrlNormalizing(t *testing.T) {
 func TestShortenSuccess(t *testing.T) {
 	service := New()
 
-	if result := service.Shorten(rawUrl); result != hashedUrl {
-		t.Errorf("Incorrect hash: expected %s, got %s", hashedUrl, result)
+	if result := service.Shorten(rawUrl); result == "" {
+		t.Errorf("Incorrect URL key: it can't be empty")
+	}
+}
+
+func TestDuplicatedUrls(t *testing.T) {
+	service := New()
+	urlKey1 := service.Shorten(rawUrl)
+	urlKey2 := service.Shorten(rawUrl)
+
+	if urlKey1 == urlKey2 {
+		t.Errorf("Duplicated URL keys: they must be different")
 	}
 }
 

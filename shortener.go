@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"io"
 	"strings"
+	"time"
 )
 
 type Shortener interface {
@@ -24,23 +25,23 @@ func New() Shortener {
 }
 
 func (s *UrlShortener) Shorten(url string) string {
+	urlKey := ""
+	isUsedKey := true
 	normalizedUrl := normalizeUrl(url)
 
-	hasher := md5.New()
-	io.WriteString(hasher, normalizedUrl)
-	hash := hex.EncodeToString(hasher.Sum(nil))[:7]
+	for isUsedKey {
+		urlKey = generateShortKey(normalizedUrl)
+		_, isUsedKey = s.storage[urlKey]
+	}
+	s.storage[urlKey] = normalizedUrl
 
-	s.storage[hash] = normalizedUrl
-	return hash
+	return urlKey
 }
 
 func (s *UrlShortener) Resolve(url string) string {
 	url = normalizeUrl(url)
-	if result, ok := s.storage[url]; ok {
-		return result
-	}
 
-	return ""
+	return s.storage[url]
 }
 
 func normalizeUrl(url string) string {
@@ -48,4 +49,13 @@ func normalizeUrl(url string) string {
 	url = strings.TrimSpace(url)
 
 	return url
+}
+
+func generateShortKey(url string) string {
+	hasher := md5.New()
+	io.WriteString(hasher, url)
+	io.WriteString(hasher, time.Now().String())
+	hash := hex.EncodeToString(hasher.Sum(nil))[:7]
+
+	return hash
 }
